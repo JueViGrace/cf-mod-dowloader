@@ -1,68 +1,38 @@
 package main
 
 import (
-	"flag"
+	"bytes"
 	"fmt"
 	"os"
 
-	"golang.org/x/net/html"
+	_ "github.com/joho/godotenv/autoload"
 )
 
 func main() {
-	path := pathFlag()
+	flags := pathFlag()
 
-	file, err := os.Open(path)
+	file, err := os.Open(flags.Path)
 	if err != nil {
 		fmt.Printf("Opening file error: %s", err)
-		panic(err)
+		return
 	}
 
-	links, err := parseHtml(file)
+	mods, err := parseHtml(file)
 	if err != nil {
 		fmt.Println("Error: ", err)
-		panic(err)
+		return
 	}
 
-	fmt.Println("Links: ", links)
-}
-
-func pathFlag() string {
-	path := flag.String("path", "", "path of html file to read")
-	flag.Parse()
-	return *path
-}
-
-func parseHtml(file *os.File) ([]string, error) {
-	doc, err := html.Parse(file)
-	if err != nil {
-		return nil, err
+	API_KEY := os.Getenv("API_KEY")
+	headers := map[string][]string{
+		"Accept":    {"application/json"},
+		"x-api-key": {API_KEY},
 	}
 
-	links := extractLinks(doc)
+	for _, e := range mods {
 
-	return links, nil
-}
+		data := bytes.NewBuffer([]byte{})
 
-func extractLinks(n *html.Node) []string {
-	links := make([]string, 0, 0)
-	var crawler func(*html.Node)
-	crawler = func(n *html.Node) {
-		if n.Type == html.ElementNode && n.Data == "li" {
-			for c := n.FirstChild; c != nil; c = c.NextSibling {
-				if c.Data == "a" {
-					for _, a := range c.Attr {
-						if a.Key == "href" {
-							fmt.Println("Link: ", a.Val)
-							links = append(links, a.Val)
-						}
-					}
-				}
-			}
-		}
-		for c := n.FirstChild; c != nil; c = c.NextSibling {
-			crawler(c)
-		}
+		fmt.Printf("Mod: %v\n", e)
 	}
-	crawler(n)
-	return links
 }
