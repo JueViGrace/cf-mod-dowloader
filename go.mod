@@ -1,5 +1,5 @@
-module github.com/JueViGrace/html-mod-dowloader
+module github.com/JueViGrace/modpack-dowloader
 
 go 1.23.2
 
-require golang.org/x/net v0.33.0 // indirect
+require golang.org/x/net v0.33.0
