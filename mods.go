@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"strings"
 
 	"golang.org/x/net/html"
 )
@@ -31,7 +32,18 @@ func extractLinks(n *html.Node) []ModFile {
 			for c := n.FirstChild; c != nil; c = c.NextSibling {
 				mod := new(ModFile)
 				if c.Data == "a" {
-					mod.Name = c.FirstChild.Data
+					var modName string
+
+					switch {
+					case strings.Contains(c.FirstChild.Data, "["):
+						modName = sliptModName(c.FirstChild.Data, "[")
+					case strings.Contains(c.FirstChild.Data, "("):
+						modName = sliptModName(c.FirstChild.Data, "(")
+					case strings.Contains(c.FirstChild.Data, "/"):
+						modName = sliptModName(c.FirstChild.Data, "/")
+					}
+
+					mod.Name = modName
 					for _, a := range c.Attr {
 						if a.Key == "href" {
 							mod.Link = a.Val
@@ -47,4 +59,19 @@ func extractLinks(n *html.Node) []ModFile {
 	}
 	crawler(n)
 	return mods
+}
+
+func sliptModName(s string, separator string) string {
+	var name string
+	words := make([]string, 0, 0)
+	words = strings.Split(s, " ")
+
+	switch {
+	case strings.Contains(words[0], separator):
+		name = strings.Split(strings.Join(words[1:], " "), separator)[0]
+	default:
+		name = strings.Split(s, separator)[0]
+	}
+
+	return name
 }

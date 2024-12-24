@@ -1,6 +1,11 @@
 package main
 
-import "flag"
+import (
+	"flag"
+	"fmt"
+	"log"
+	"os"
+)
 
 type Flags struct {
 	Path        string
@@ -10,7 +15,12 @@ type Flags struct {
 func pathFlag() *Flags {
 	flags := new(Flags)
 
-	path := flag.String("path", "", "path of html file to read")
+	defaultPath, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	path := flag.String("path", fmt.Sprintf("%s/%s", defaultPath, "modlist.html"), "path of html file to read")
 	gameVersion := flag.String("version", "1.20.1", "Game version to download")
 	flag.Parse()
 

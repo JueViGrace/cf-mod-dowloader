@@ -8,14 +8,17 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 
 	_ "github.com/joho/godotenv/autoload"
 )
 
 var (
-	API_KEY string = os.Getenv("API_KEY")
-	baseUrl *url.URL
-	client  *http.Client = new(http.Client)
+	API_KEY   string = os.Getenv("API_KEY")
+	baseUrl   *url.URL
+	searchUrl *url.URL
+	apiUrl    *url.URL
+	client    *http.Client = new(http.Client)
 )
 
 func main() {
@@ -28,9 +31,17 @@ func main() {
 	}
 
 	fmt.Println("Parsing search url")
-	searchUrl, err := url.Parse(baseUrl.String() + "/search")
+	searchUrl, err = url.Parse(baseUrl.String() + "/search")
 	if err != nil {
 		fmt.Println("Error pasing the search url")
+		log.Fatal(err)
+		return
+	}
+
+	fmt.Println("Parsing base url")
+	apiUrl, err = url.Parse("https://api.curseforge.com/v1/mods")
+	if err != nil {
+		fmt.Println("Error while parsing the base url")
 		log.Fatal(err)
 		return
 	}
@@ -61,22 +72,24 @@ func main() {
 	}
 
 	fmt.Println("Creating response mod list")
-	modsList := make([]APIResponse, len(mods))
+	modsList := make([]Mod, len(mods))
 
 	fmt.Println("Iterating through local mods slice")
 	for _, e := range mods {
-		mod := new(APIResponse)
+		modsResponse := new(APIResponse)
 
 		fmt.Println("Adding query parameters to the request")
 		params := url.Values{}
-		params.Add("gameId", string(432))
+		params.Add("gameId", "432")
+		params.Add("modLoaderType", "Forge")
 		params.Add("gameVersion", flags.GameVersion)
-		params.Add("searchFilter", e.Name)
+		params.Add("filterText", e.Name)
 
 		fmt.Println("Encoding query parameters")
 		searchUrl.RawQuery = params.Encode()
 
 		fmt.Println("Creating http request")
+		fmt.Println("Search URL: ", searchUrl)
 		req, err := http.NewRequest("GET", searchUrl.String(), nil)
 		if err != nil {
 			fmt.Println("Error while creating the request")
@@ -109,21 +122,21 @@ func main() {
 		}
 
 		fmt.Println("Unmarshaling body")
-		err = json.Unmarshal(body, mod)
+		err = json.Unmarshal(body, modsResponse)
 		if err != nil {
 			fmt.Println("Error while unmarshaling response body")
 			return
 		}
 
 		fmt.Println("Adding response body to the new list")
-		modsList = append(modsList, *mod)
-
-		fmt.Println("Mod: ", string(body))
+		for _, modData := range modsResponse.Data {
+			if strings.Contains(modData.Name, strings.Split(e.Name, " ")[0]) {
+				modsList = append(modsList, modData)
+			}
+		}
 	}
 
 	for _, e := range modsList {
-		for _, d := range e.Data {
-			fmt.Printf("New mod list: %v", d.Name)
-		}
+		fmt.Printf("Mods to download list: %v\n", e)
 	}
 }
