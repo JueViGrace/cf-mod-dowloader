@@ -29,11 +29,15 @@ func main() {
 		return
 	}
 
-	modsList, err := searchMods(mods, *flags)
-	if err != nil {
-		fmt.Println("Error searching mods")
-		log.Fatal(err)
-		return
+	modsList := make([]Mod, 0, 0)
+	for _, mod := range mods {
+		newMod, err := searchMods(mod, *flags)
+		if err != nil {
+			fmt.Println("Error searching mods")
+			log.Fatal(err)
+			break
+		}
+		modsList = append(modsList, *newMod)
 	}
 
 	for _, e := range modsList {

@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 var (
@@ -18,7 +19,7 @@ var (
 	modsResponse *APIResponse
 )
 
-func searchMods(mod ModFile, flags Flags) (*Mod, error) {
+func searchMods(modFile ModFile, flags Flags) (*Mod, error) {
 	fmt.Println("Initializing searchUrl")
 	searchUrl, err := url.Parse(SEARCH_URL)
 	if err != nil {
@@ -29,14 +30,14 @@ func searchMods(mod ModFile, flags Flags) (*Mod, error) {
 	modsResponse = new(APIResponse)
 
 	fmt.Println("Initializing api response")
-	modsResponse = new(APIResponse)
+	mod := new(Mod)
 
 	fmt.Println("Adding query parameters to the request")
 	params := url.Values{}
 	params.Add("gameId", "432")
 	params.Add("modLoaderType", "Forge")
 	params.Add("gameVersion", flags.GameVersion)
-	params.Add("filterText", mod.Name)
+	params.Add("filterText", modFile.Name)
 
 	fmt.Println("Encoding query parameters")
 	searchUrl.RawQuery = params.Encode()
@@ -50,7 +51,7 @@ func searchMods(mod ModFile, flags Flags) (*Mod, error) {
 	fmt.Println("Adding the headers")
 	req.Header = headers
 
-	fmt.Printf("Making the request for mod: %s\n", mod.Name)
+	fmt.Printf("Making the request for modFile: %s\n", modFile.Name)
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -72,5 +73,14 @@ func searchMods(mod ModFile, flags Flags) (*Mod, error) {
 		return nil, err
 	}
 
-	return nil, nil
+	for _, e := range modsResponse.Data {
+		if strings.Contains(e.Name, strings.Split(modFile.Name, " ")[0]) {
+			mod.ID = e.ID
+			mod.Name = e.Name
+			mod.LocalName = modFile.Name
+			mod.LatestFiles = e.LatestFiles
+		}
+	}
+
+	return mod, nil
 }
