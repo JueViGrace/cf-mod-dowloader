@@ -9,7 +9,6 @@ import (
 
 type ModFile struct {
 	Name string `json:"name"`
-	Link string `json:"link"`
 }
 
 func parseHtml(file *os.File) ([]ModFile, error) {
@@ -44,11 +43,6 @@ func extractLinks(n *html.Node) []ModFile {
 					}
 
 					mod.Name = modName
-					for _, a := range c.Attr {
-						if a.Key == "href" {
-							mod.Link = a.Val
-						}
-					}
 				}
 				mods = append(mods, *mod)
 			}

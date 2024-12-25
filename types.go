@@ -13,6 +13,7 @@ type APIResponse struct {
 type Mod struct {
 	ID          int           `json:"id"`
 	Name        string        `json:"name"`
+	LocalName   string        `json:"-"`
 	LatestFiles []LatestFiles `json:"latestFiles"`
 }
 
